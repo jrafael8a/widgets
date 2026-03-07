@@ -282,7 +282,7 @@
 <script>
   const MONTHS       = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const MOON_NAMES   = { '🌑':'Luna nueva','🌓':'Cuarto creciente','🌕':'Luna llena','🌗':'Cuarto menguante' };
+  const MOON_NAMES   = { '🌑':'Nueva','🌓':'Creciente','🌕':'Llena','🌗':'Menguante' };
 
   const now = new Date();
   let current  = { year: now.getFullYear(), month: now.getMonth() };
@@ -421,7 +421,7 @@
       lEl.textContent = MOON_NAMES[emoji];
       const dEl = document.createElement('span');
       dEl.className = 'lunar-date';
-      dEl.textContent = `${day} de ${MONTHS[month].toLowerCase()}`;
+      dEl.textContent = `${day} ${MONTHS_SHORT[month]}`;
       row.appendChild(eEl);
       row.appendChild(lEl);
       row.appendChild(dEl);
