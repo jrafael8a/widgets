@@ -159,18 +159,23 @@
   /* ── LUNAR PANEL ── */
   .lunar-panel {
     margin: 0 1.4rem;
-    padding: 0.7rem 0.2rem 1.1rem;
+    padding: 0.6rem 0.2rem 0.9rem;
     border-top: 1px solid var(--border);
+    height: 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    gap: 0;
   }
   .lunar-row {
     display: flex;
     align-items: baseline;
-    gap: 0.55rem;
-    line-height: 2;
+    gap: 0.45rem;
+    line-height: 1.85;
   }
-  .lunar-emoji { font-size: 0.8rem; }
-  .lunar-label { font-size: 0.68rem; color: var(--ink); }
-  .lunar-date  { font-size: 0.68rem; color: var(--ink-light); }
+  .lunar-emoji { font-size: 0.78rem; }
+  .lunar-label { font-size: 0.64rem; color: var(--ink); }
+  .lunar-date  { font-size: 0.64rem; color: var(--ink-light); }
 
   /* ── YEAR VIEW ── */
   .year-view { display: none; padding: 1rem 1.2rem 1.4rem; }
@@ -292,25 +297,40 @@
     return ((diff % SYN) + SYN) % SYN / SYN;
   }
   function lunarEventsForMonth(y, m) {
-    const days = new Date(y, m+1, 0).getDate();
-    const SYN  = 29.53058867;
-    const dst  = (a, b) => Math.min(Math.abs(a-b), 1-Math.abs(a-b));
-    const phases = [
-      { target: 0,    emoji: "🌑" },
-      { target: 0.25, emoji: "🌓" },
-      { target: 0.5,  emoji: "🌕" },
-      { target: 0.75, emoji: "🌗" },
+    const SYN    = 29.53058867;
+    const ref    = Date.UTC(2000, 0, 6, 18, 14);
+    const days   = new Date(y, m+1, 0).getDate();
+    const PHASES = [
+      { frac: 0,    emoji: "🌑" },
+      { frac: 0.25, emoji: "🌓" },
+      { frac: 0.5,  emoji: "🌕" },
+      { frac: 0.75, emoji: "🌗" },
     ];
     const out = [];
-    phases.forEach(({ target, emoji }) => {
-      let best = null, bestDist = Infinity;
-      for (let d = 1; d <= days; d++) {
-        const p    = lunarPhase(y, m, d);
-        const dist = dst(p, target) * SYN;
-        if (dist < 0.5 && dist < bestDist) { bestDist = dist; best = d; }
-      }
-      if (best !== null) out.push({ day: best, emoji });
-    });
+
+    function cycleAge(ms) {
+      const diff = (ms - ref) / 86400000;
+      return ((diff % SYN) + SYN) % SYN;
+    }
+
+    for (let d = 1; d <= days; d++) {
+      // window: midnight of day d  →  midnight of day d+1 (full 24h)
+      const msStart = Date.UTC(y, m, d,   0, 0);
+      const msEnd   = Date.UTC(y, m, d+1, 0, 0); // JS Date handles month overflow
+      const ageStart = cycleAge(msStart);
+      const ageEnd   = cycleAge(msEnd);
+      PHASES.forEach(({ frac, emoji }) => {
+        const target = frac * SYN;
+        let crossed;
+        if (ageStart <= ageEnd) {
+          crossed = target >= ageStart && target < ageEnd;
+        } else {
+          crossed = target >= ageStart || target < ageEnd;
+        }
+        if (crossed) out.push({ day: d, emoji });
+      });
+    }
+
     out.sort((a, b) => a.day - b.day);
     return out;
   }
@@ -388,24 +408,20 @@
     }
 
     // Lunar panel
-    const panel  = document.getElementById('lunar-panel');
+    const panel = document.getElementById('lunar-panel');
     panel.innerHTML = '';
     lunarEventsForMonth(year, month).forEach(({ day, emoji }) => {
       const row = document.createElement('div');
       row.className = 'lunar-row';
-
       const eEl = document.createElement('span');
       eEl.className = 'lunar-emoji';
       eEl.textContent = emoji;
-
       const lEl = document.createElement('span');
       lEl.className = 'lunar-label';
       lEl.textContent = MOON_NAMES[emoji];
-
       const dEl = document.createElement('span');
       dEl.className = 'lunar-date';
       dEl.textContent = `${day} de ${MONTHS[month].toLowerCase()}`;
-
       row.appendChild(eEl);
       row.appendChild(lEl);
       row.appendChild(dEl);
